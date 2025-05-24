@@ -14,12 +14,25 @@ export default function Chat() {
   const [chatBoxes, setChatBoxes] = useState({});
 
 
+  const openChatWith = (user) => {
+    if (!chatBoxes[user]) {
+      socket.emit('get history', { withUser: user }, (history) => {
+        setChatBoxes(prev => ({
+          ...prev,
+          [user]: history.map(h => ({ from: h.from, message: h.message }))
+        }));
+      });
+    }
+  };
 
   useEffect(() => {
     socket.on('private message', ({ from, message }) => {
       setChatBoxes(prev => ({
         ...prev,
-        [from]: [...(prev[from] || []), { from, message }]
+        [from]: [
+          ...(prev[from] || []),
+          { from, message }
+        ]
       }));
     });
 
@@ -42,6 +55,8 @@ export default function Chat() {
   };
 
   const sendMessage = (toUser) => {
+    openChatWith(toUser);
+
     const msg = messageInputs[toUser] || message;
     if (!msg || !msg.trim()) return;
 
@@ -63,11 +78,8 @@ export default function Chat() {
   };
 
 
-
-
   return (
     <div style={{ paddingTop: '120px' }}>
-      {/* ÜST SABİT BAR */}
       <div style={{
         position: 'fixed',
         top: 0,
@@ -94,7 +106,6 @@ export default function Chat() {
         )}
       </div>
 
-      {/* MESAJLAŞMA GÖVDESİ */}
       {isUsernameSet && (
         <div style={{ padding: '2rem', width: '95vw', overflow: 'hidden' }}>
           <h2>Özel Mesajlaşma</h2>
